@@ -40,11 +40,6 @@ Xerxes is a command-line AI agent that transforms natural language into DevOps o
 uv tool install xerxes
 ```
 
-### Using pip
-
-```bash
-pip install xerxes
-```
 
 ### From Source
 

@@ -91,6 +91,8 @@ xerxes chat
 
 ### Example Session
 
+<meta http-equiv="content-type" content="text/html; charset=utf-8"><img src="https://chat.google.com/u/2/api/get_attachment_url?url_type=FIFE_URL&amp;content_type=image%2Fpng&amp;attachment_token=AOo0EEXaVMk%2FU842UdSi3XDwoe2XdaKUSj1OFNDKbKTwRfslrp2W0aCzmWv6w954DN6bnEhiQS%2FXx0hb35KHZk3vT4BCRuDlzsPGA2jR%2FNpo6JyXd8jHNYe34jprv5RFu%2FBbTzl%2BC8%2FE344FCQJJa2401LX%2FiZgq21wKx5mcV913DgCiAiGfcSDh3J31QbJxDKzMW70%2BKyW%2F22pDhiC92dY8EcvseGTljuy2iUWwh9Exyw5j%2FEL1nfXcdNT1DbTa8y%2FPmAg8YLP9W%2Bq0NydE5zfEjbVr8WDXwxQ8jXiZ3IyWcuXhBVBzQBt%2Ffta80m4MlMeOi7UNOnRGjeSA20xkO%2BFVTQDyhhynFmRw2m2fgQa%2BHKtFemgl2ShbnKFzzT%2BbgVH4k1lUj%2FW58mNz5ZhfD0xL4vASddemeR1dNvnwlM16SPcjIVLgoTdc%2BGxvA09PCiTjrj8XJDrNQSDs5uuay8kDhhXVfa4i%2Fq0a0%2B6MX9UXvLbEVUX5fkvdtpioJZBUNaOmAb1uFtkiwTcjhKCqHy2NYH06iDZ6Lt%2FA2Gnq5PUHltLCHq5M%2FQhbMu6enajV%2B%2BjokS8SSw3UHye5ozQEQh583WcHcCoqH54RLB1XtXQSTsSN7Sk%2B&amp;allow_caching=true&amp;authuser=2&amp;sz=w3152-h1529" class="ndfHFb-c4YZDc-HiaYvf-RJLb9c" alt="Displaying image.png" aria-hidden="true">
+
 ```
 You: how many GKE clusters do i have?
 

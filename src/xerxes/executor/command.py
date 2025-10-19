@@ -52,7 +52,7 @@ class CommandExecutor:
 
             if result.get("success"):
                 if result.get("stdout"):
-                    console.print(Panel(result["stdout"], title="Output", border_style="green"))
+                    self._show_output(result["stdout"], "Output")
             else:
                 if result.get("stderr"):
                     console.print(
@@ -69,6 +69,37 @@ class CommandExecutor:
     def _get_cli_command(self, tool_name: str) -> str | None:
         tool = self.registry.get_tool(tool_name)
         return tool.cli_command if tool else None
+
+    def _show_output(self, output: str, title: str) -> None:
+        lines = output.split('\n')
+        total_lines = len(lines)
+        output_size_kb = len(output) / 1024
+
+        if total_lines <= 20:
+            console.print(Panel(output, title=title, border_style="green"))
+        else:
+            preview_lines = lines[:10] + [
+                "",
+                f"[dim]... ({total_lines - 15} lines hidden, {output_size_kb:.1f} KB total) ...[/dim]",
+                ""
+            ] + lines[-5:]
+            preview = '\n'.join(preview_lines)
+
+            console.print(Panel(
+                preview,
+                title=f"{title} (condensed - {total_lines} lines)",
+                border_style="green"
+            ))
+
+            response = console.input(
+                "\n[[bold cyan]V[/bold cyan]]iew full output / "
+                "[[bold green]C[/bold green]]ontinue? "
+            ).strip().lower()
+
+            if response in ("v", "view", "yes", "y"):
+                console.print(Panel(output, title=f"{title} (full)", border_style="cyan"))
+
+            console.print()
 
     def _show_command_preview(self, command: str, reasoning: str, is_destructive: bool) -> str:
         console.print()

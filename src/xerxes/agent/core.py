@@ -66,8 +66,9 @@ class Agent:
     def chat(self, user_message: str) -> str:
         self.session.add_message("user", user_message)
 
-        max_iterations = 5
+        max_iterations = 10
         iteration = 0
+        total_commands_executed = 0
 
         while iteration < max_iterations:
             iteration += 1
@@ -83,28 +84,51 @@ class Agent:
                         temperature=self.settings.temperature,
                     )
 
-            if response.content:
-                self.session.add_message("assistant", response.content)
-                return response.content
-
             if response.tool_calls:
                 tool_results = []
+                num_commands = len(response.tool_calls)
 
-                for tool_call in response.tool_calls:
-                    result = self.executor.execute_tool_call(
-                        tool_call.name, tool_call.arguments
+                if num_commands == 1:
+                    total_commands_executed += 1
+                    console.print(
+                        f"[bold magenta]Step {iteration} - Command #{total_commands_executed}[/bold magenta]"
                     )
-
+                    result = self.executor.execute_tool_call(
+                        response.tool_calls[0].name, response.tool_calls[0].arguments
+                    )
                     tool_results.append(
                         {
-                            "tool_call_id": tool_call.id,
-                            "function_name": tool_call.name,
+                            "tool_call_id": response.tool_calls[0].id,
+                            "function_name": response.tool_calls[0].name,
                             "result": result,
                         }
                     )
+                else:
+                    console.print(
+                        f"[bold magenta]Step {iteration} - Executing {num_commands} commands in parallel[/bold magenta]"
+                    )
+                    for idx, tool_call in enumerate(response.tool_calls, 1):
+                        total_commands_executed += 1
+                        console.print(f"  [cyan]└─ Command {idx}/{num_commands} (#{total_commands_executed})[/cyan]")
+
+                        result = self.executor.execute_tool_call(
+                            tool_call.name, tool_call.arguments
+                        )
+
+                        tool_results.append(
+                            {
+                                "tool_call_id": tool_call.id,
+                                "function_name": tool_call.name,
+                                "result": result,
+                            }
+                        )
 
                 tool_results_message = json.dumps(tool_results, indent=2)
                 self.session.add_message("user", f"Tool results:\n{tool_results_message}")
+
+            elif response.content:
+                self.session.add_message("assistant", response.content)
+                return response.content
 
             else:
                 break

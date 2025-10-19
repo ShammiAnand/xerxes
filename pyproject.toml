@@ -1,6 +1,6 @@
 [project]
 name = "xerxes"
-version = "0.1.0"
+version = "0.2.0"
 authors = [{name = "Shammi Anand", email = "shammianand101@gmail.com"}]
 description = "An intelligent DevOps agent with BYOK for managing cloud infrastructure"
 readme = "README.md"

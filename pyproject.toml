@@ -1,0 +1,15 @@
+[project]
+name = "xerxes"
+version = "0.1.0"
+author = "shammianand101@gmail.com"
+description = "agentic coding tool with BYOK"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "typer>=0.19.2",
+]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+exclude = [".venv"]

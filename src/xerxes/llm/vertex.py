@@ -14,9 +14,8 @@ class VertexAIProvider(BaseLLMProvider):
         location: str = "us-central1",
         model_name: str = "claude-3-5-sonnet@20240620",
         credentials_path: str | None = None,
-        **kwargs,
     ):
-        super().__init__(**kwargs)
+        super().__init__()
 
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT")
         self.location = location
@@ -34,7 +33,6 @@ class VertexAIProvider(BaseLLMProvider):
         tools: list[dict[str, Any]] | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.0,
-        **kwargs,
     ) -> LLMResponse:
         model = GenerativeModel(self.model_name)
         contents = self._convert_messages(messages)

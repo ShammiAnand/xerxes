@@ -25,7 +25,7 @@ class LLMResponse:
 
 
 class BaseLLMProvider(ABC):
-    def __init__(self, **kwargs):
+    def __init__(self):
         pass
 
     @abstractmethod
@@ -35,7 +35,6 @@ class BaseLLMProvider(ABC):
         tools: list[dict[str, Any]] | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.0,
-        **kwargs,
     ) -> LLMResponse:
         pass
 

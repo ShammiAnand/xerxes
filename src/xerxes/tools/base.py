@@ -99,7 +99,6 @@ class BaseTool(ABC):
             return {"success": False, "error": f"Unknown function: {function_name}"}
 
         command_str = arguments.get("command", "")
-        reasoning = arguments.get("reasoning", "")
 
         full_command = f"{self.cli_command} {command_str}"
         command_parts = shlex.split(full_command)
@@ -111,6 +110,7 @@ class BaseTool(ABC):
             return None
 
         try:
+            # TODO:: for kubectl, instead of `--version` use `version`
             result = subprocess.run(
                 [self.cli_command, "--version"],
                 capture_output=True,

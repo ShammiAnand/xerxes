@@ -13,6 +13,7 @@ class VertexAIProvider(BaseLLMProvider):
         project_id: str | None = None,
         location: str = "us-central1",
         model_name: str = "claude-3-5-sonnet@20240620",
+        credentials_path: str | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -20,6 +21,9 @@ class VertexAIProvider(BaseLLMProvider):
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT")
         self.location = location
         self.model_name = model_name
+
+        if credentials_path:
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
 
         if self.project_id:
             aiplatform.init(project=self.project_id, location=self.location)
@@ -88,8 +92,11 @@ class VertexAIProvider(BaseLLMProvider):
         tool_calls = []
         stop_reason = None
 
-        if response.text:
-            content = response.text
+        try:
+            if response.text:
+                content = response.text
+        except (ValueError, AttributeError):
+            pass
 
         if hasattr(response, "candidates") and response.candidates:
             candidate = response.candidates[0]

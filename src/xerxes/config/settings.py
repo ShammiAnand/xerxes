@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     vertex_project_id: str | None = Field(default=None)
     vertex_location: str = Field(default="us-central1")
     vertex_model: str = Field(default="claude-3-5-sonnet@20240620")
+    google_application_credentials: str | None = Field(default=None)
 
     max_tokens: int = Field(default=4096)
     temperature: float = Field(default=0.0)

@@ -1,4 +1,9 @@
 import json
+import logging
+import os
+import sys
+import warnings
+from contextlib import contextmanager
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -10,6 +15,28 @@ from ..tools.registry import get_registry
 from .prompts import get_system_prompt
 from .session import ChatSession
 
+warnings.filterwarnings("ignore")
+logging.getLogger("absl").setLevel(logging.CRITICAL)
+logging.getLogger("google").setLevel(logging.CRITICAL)
+os.environ["GRPC_VERBOSITY"] = "NONE"
+os.environ["GLOG_minloglevel"] = "3"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
+
+@contextmanager
+def suppress_stderr():
+    stderr_fileno = sys.stderr.fileno()
+    old_stderr = os.dup(stderr_fileno)
+    devnull_fd = os.open(os.devnull, os.O_WRONLY)
+    try:
+        os.dup2(devnull_fd, stderr_fileno)
+        yield
+    finally:
+        os.dup2(old_stderr, stderr_fileno)
+        os.close(devnull_fd)
+        os.close(old_stderr)
+
+
 console = Console()
 
 
@@ -20,11 +47,13 @@ class Agent:
         self.executor = CommandExecutor()
         self.session = ChatSession()
 
-        self.llm = VertexAIProvider(
-            project_id=self.settings.vertex_project_id,
-            location=self.settings.vertex_location,
-            model_name=self.settings.vertex_model,
-        )
+        with suppress_stderr():
+            self.llm = VertexAIProvider(
+                project_id=self.settings.vertex_project_id,
+                location=self.settings.vertex_location,
+                model_name=self.settings.vertex_model,
+                credentials_path=self.settings.google_application_credentials,
+            )
 
         self._initialize_session()
 
@@ -44,12 +73,13 @@ class Agent:
 
             tools = self.registry.get_function_schemas()
 
-            response = self.llm.chat(
-                messages=self.session.get_messages(),
-                tools=tools if tools else None,
-                max_tokens=self.settings.max_tokens,
-                temperature=self.settings.temperature,
-            )
+            with suppress_stderr():
+                response = self.llm.chat(
+                    messages=self.session.get_messages(),
+                    tools=tools if tools else None,
+                    max_tokens=self.settings.max_tokens,
+                    temperature=self.settings.temperature,
+                )
 
             if response.content:
                 self.session.add_message("assistant", response.content)

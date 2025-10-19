@@ -7,6 +7,7 @@ from contextlib import contextmanager
 
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.spinner import Spinner
 
 from ..config.settings import get_settings
 from ..executor.command import CommandExecutor
@@ -73,13 +74,14 @@ class Agent:
 
             tools = self.registry.get_function_schemas()
 
-            with suppress_stderr():
-                response = self.llm.chat(
-                    messages=self.session.get_messages(),
-                    tools=tools if tools else None,
-                    max_tokens=self.settings.max_tokens,
-                    temperature=self.settings.temperature,
-                )
+            with console.status("[cyan]Thinking...", spinner="dots") as status:
+                with suppress_stderr():
+                    response = self.llm.chat(
+                        messages=self.session.get_messages(),
+                        tools=tools if tools else None,
+                        max_tokens=self.settings.max_tokens,
+                        temperature=self.settings.temperature,
+                    )
 
             if response.content:
                 self.session.add_message("assistant", response.content)

@@ -37,7 +37,8 @@ class ToolRegistry:
         for tool in self.get_available_tools():
             schemas = tool.get_function_schemas()
             if any(schema["name"] == function_name for schema in schemas):
-                return tool.is_destructive(function_name, arguments)
+                command = arguments.get("command", "")
+                return tool.is_destructive(command)
 
         return False
 

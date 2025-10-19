@@ -18,6 +18,8 @@
 
 Xerxes is a command-line AI agent that transforms natural language into DevOps operations. Unlike traditional tools with predefined commands, Xerxes uses **free-form thinking** to execute **any** command supported by your installed CLI tools (AWS, GCP, Kubernetes, Docker).
 
+<img width="936" height="376" alt="image" src="https://github.com/user-attachments/assets/8cd7f00a-356f-476f-91a1-e5a496fca6ae" />
+
 ## Features
 
 ### Core Capabilities

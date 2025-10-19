@@ -1,25 +1,38 @@
 # Xerxes
 
-> An intelligent DevOps agent with BYOK (Bring Your Own Key) for managing cloud infrastructure through conversational AI.
+<div align="center">
 
-Xerxes is a command-line AI agent that helps you manage your DevOps infrastructure using natural language. It integrates with AWS, GCP, Kubernetes, and Docker, allowing you to query, manage, and operate your infrastructure through a conversational interface.
+**An intelligent DevOps agent with unrestricted CLI access and free-form reasoning**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+[Features](#-features) • [Installation](#-installation) • [Quick Start](#-quick-start) • [Documentation](#-usage) • [Contributing](#-contributing)
+
+</div>
+
+---
+
+## Overview
+
+Xerxes is a command-line AI agent that transforms natural language into DevOps operations. Unlike traditional tools with predefined commands, Xerxes uses **free-form thinking** to execute **any** command supported by your installed CLI tools (AWS, GCP, Kubernetes, Docker).
 
 ## Features
 
-- **Multi-Cloud Support**: AWS CLI, GCP (gcloud), Kubernetes (kubectl), Docker
-- **Intelligent Agent**: Uses Vertex AI (Claude 3.5 Sonnet or Gemini) for natural language understanding
-- **Safety First**: Auto-executes read-only commands, requires confirmation for destructive operations
-- **Extensible Architecture**: Easy to add new tools and LLM providers
-- **Rich Terminal UI**: Beautiful output with syntax highlighting and structured formatting
-- **Session Management**: Maintains conversation context for multi-turn interactions
+### Core Capabilities
+
+- **Unrestricted CLI Access**: Execute ANY command from AWS CLI, gcloud, kubectl, or docker
+- **Free-Form Thinking**: LLM reasons about your request and forms optimal commands
+- **Interactive Approval**: See command + reasoning before execution
+  - `[R]un` - Execute this command
+  - `[S]kip` - Skip and continue
+  - `[A]lways` - Auto-approve for session
+- **Bring Your Own Key (BYOK)**: Use your own Vertex AI credentials
+- **Multi-Cloud Support**: AWS, GCP, Kubernetes, Docker in one interface
+- **Safety Mechanisms**: Automatic detection of destructive operations
 
 ## Installation
-
-### Using pip
-
-```bash
-pip install xerxes
-```
 
 ### Using UV (Recommended)
 
@@ -27,224 +40,206 @@ pip install xerxes
 uv tool install xerxes
 ```
 
+### Using pip
+
+```bash
+pip install xerxes
+```
+
 ### From Source
 
 ```bash
-git clone https://github.com/yourusername/xerxes.git
+git clone https://github.com/shammianand/xerxes.git
 cd xerxes
 uv sync
 ```
 
-## Prerequisites
+## Quick Start
 
-### Required
+### 1. Prerequisites
 
-- Python 3.10+
-- GCP Project with Vertex AI API enabled
-- Service account credentials or API key for Vertex AI
+- **Python 3.10+**
+- **GCP Project** with Vertex AI API enabled
+- **Service Account** or API key for Vertex AI
+- **Optional**: Install CLI tools you want to use (kubectl, docker, aws, gcloud)
 
-### Optional (Install CLI tools you want to use)
+### 2. Configuration
 
-- `kubectl` for Kubernetes management
-- `docker` for container operations
-- `aws` CLI for AWS operations
-- `gcloud` CLI for GCP operations
+Create a `.env` file:
 
-## Configuration
+```bash
+XERXES_VERTEX_PROJECT_ID=your-gcp-project-id
+XERXES_VERTEX_LOCATION=us-central1
+XERXES_VERTEX_MODEL=gemini-2.0-flash
+XERXES_GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+```
 
-### Initial Setup
-
-1. Set your GCP project ID:
+Or use the CLI:
 
 ```bash
 xerxes config set vertex_project_id your-gcp-project-id
+xerxes config set google_application_credentials /path/to/sa.json
 ```
 
-2. Set up authentication (choose one):
-
-**Option A: Service Account (Recommended)**
-```bash
-export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
-```
-
-**Option B: API Key**
-```bash
-xerxes config set vertex_api_key your-api-key
-```
-
-### Optional Configuration
-
-```bash
-# Change region (default: us-central1)
-xerxes config set vertex_location us-east1
-
-# Change model (default: claude-3-5-sonnet@20240620)
-xerxes config set vertex_model gemini-1.5-pro
-
-# View current config
-xerxes config show
-```
-
-## Usage
-
-### Interactive Chat
-
-Start a conversational session:
+### 3. Start Chatting
 
 ```bash
 xerxes chat
 ```
 
-Example interactions:
+## Usage
+
+### Example Session
 
 ```
-You: List all pods in the production namespace
+You: how many GKE clusters do i have?
 
-Xerxes: I'll get the pods from the production namespace.
-[Executes: kubectl get pods -n production]
-[Shows formatted table of pods]
+[Thinking...]
 
-You: Show me logs for the api-server pod
+┌─ Command Preview ────────────────────────────────────────┐
+│ Command:                                                  │
+│ $ gcloud container clusters list --format=json           │
+│                                                           │
+│ Reasoning:                                                │
+│ Listing all GKE clusters to count them                   │
+└───────────────────────────────────────────────────────────┘
 
-Xerxes: I'll fetch the logs for the api-server pod.
-[Executes: kubectl logs api-server -n production]
-[Shows logs]
+[R]un / [S]kip / [A]lways for session? a
 
-You: Delete the failed pod
+✓ Auto-approve enabled for this session
 
-⚠️  Destructive Operation Detected
-Function: kubectl_delete
-Arguments:
-  resource_type: pod
-  name: failed-pod
-  namespace: production
+Executing: gcloud container clusters list --format=json
 
-Confirm execution? [y/N]:
+╭─────────────── Output ───────────────╮
+│ [                                    │
+│   {                                  │
+│     "name": "prod-cluster",          │
+│     "location": "us-central1-a",     │
+│     ...                              │
+│   }                                  │
+│ ]                                    │
+╰──────────────────────────────────────╯
+
+Xerxes:
+You have 3 GKE clusters: prod-cluster, staging-cluster, and dev-cluster.
+
+You: show me pods in prod-cluster that are failing
+
+[Thinking...]
+
+Executing: kubectl get pods --all-namespaces --field-selector=status.phase=Failed
+
+...
 ```
 
-### Check Available Tools
-
-```bash
-xerxes tools
-```
-
-Output:
-```
-DevOps Tools
-┏━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
-┃ Tool       ┃ CLI Command ┃ Status      ┃ Version         ┃
-┡━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
-│ kubernetes │ kubectl     │ ✓ Installed │ v1.28.0         │
-│ docker     │ docker      │ ✓ Installed │ 24.0.5          │
-│ aws        │ aws         │ ✗ Not Found │ N/A             │
-│ gcp        │ gcloud      │ ✓ Installed │ 455.0.0         │
-└────────────┴─────────────┴─────────────┴─────────────────┘
-```
 
 ### Example Use Cases
 
-**Kubernetes:**
-- "List all running pods in production"
-- "Get logs from the nginx pod"
-- "Describe the frontend deployment"
-- "Show me all services in the default namespace"
-
-**Docker:**
-- "List all running containers"
-- "Show me the logs for container xyz"
-- "What Docker images do I have?"
-
-**AWS:**
-- "List all S3 buckets"
-- "Show EC2 instances in us-east-1"
-- "Get CloudWatch logs for my-log-group"
-
-**GCP:**
-- "List Compute Engine instances"
-- "Show me Cloud Run services"
-- "List storage buckets"
-
-## Architecture
-
+**Infrastructure Discovery:**
 ```
-xerxes/
-├── agent/          # Core agent logic and chat loop
-├── llm/            # LLM provider abstractions
-│   └── vertex.py   # Vertex AI implementation
-├── tools/          # DevOps CLI tool wrappers
-│   ├── kubernetes.py
-│   ├── docker.py
-│   ├── aws.py
-│   └── gcp.py
-├── executor/       # Command execution with safety checks
-└── config/         # Configuration management
+"What cloud run services do I have and what are their URLs?"
+"Show me all pods that have restarted more than 5 times"
+"List S3 buckets and their sizes"
 ```
 
-## Safety Features
+**Troubleshooting:**
+```
+"Why is my deployment failing?"
+"Show me logs from the last hour for pods with label app=frontend"
+"What containers are using more than 1GB of memory?"
+```
 
-Xerxes includes built-in safety mechanisms:
+**Operations:**
+```
+"Scale the api deployment to 5 replicas"
+"Delete all pods in failed state"
+"Create a new GCS bucket for backups"
+```
 
-1. **Destructive Operation Detection**: Automatically detects commands that modify or delete resources
-2. **Confirmation Prompts**: Requires user confirmation before executing destructive operations
-3. **Command Preview**: Shows exactly what will be executed before running
-4. **Read-Only Auto-Execution**: Safely auto-executes read-only commands like `get`, `list`, `describe`
-
-## Development
-
-### Setup Development Environment
+## CLI Commands
 
 ```bash
+# Start interactive chat
+xerxes chat
+
+# Manage configuration
+xerxes config show
+xerxes config set <key> <value>
+
+# List available tools
+xerxes tools
+
+# Show version
+xerxes version
+```
+
+## Configuration Options
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `XERXES_VERTEX_PROJECT_ID` | GCP project ID (required) | - |
+| `XERXES_VERTEX_LOCATION` | GCP region | `us-central1` |
+| `XERXES_VERTEX_MODEL` | Model name | `claude-3-5-sonnet@20240620` |
+| `XERXES_GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON | - |
+| `XERXES_MAX_TOKENS` | Max tokens per response | `4096` |
+| `XERXES_TEMPERATURE` | LLM temperature | `0.0` |
+
+## Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests and linters:
+   ```bash
+   uv run pytest
+   uv run black src/
+   uv run ruff check src/
+   ```
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+## Development Setup
+
+```bash
+# Clone the repo
 git clone https://github.com/shammianand/xerxes.git
 cd xerxes
+
+# Install dependencies
 uv sync --all-extras
-```
 
-### Run Tests
-
-```bash
-uv run pytest
-```
-
-### Code Quality
-
-```bash
-# Format code
-uv run black src/
-
-# Lint
-uv run ruff check src/
+# Run in development mode
+uv run xerxes chat
 ```
 
 ## Roadmap
 
-- [ ] Support for additional LLM providers (Anthropic, OpenAI, Ollama)
+- [ ] Additional LLM providers (Anthropic direct, OpenAI, Ollama)
 - [ ] Terraform integration
 - [ ] Ansible playbook execution
 - [ ] Multi-step workflow automation
-- [ ] Session history and replay
+- [ ] Session history save/replay
 - [ ] Web dashboard for monitoring
 - [ ] Plugin system for custom tools
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- [ ] One-shot command mode (`xerxes run "list all pods"`)
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details
 
-## Acknowledgments
-
-- Built with [Typer](https://typer.tiangolo.com/) for CLI
-- Uses [Rich](https://rich.readthedocs.io/) for beautiful terminal output
-- Powered by [Vertex AI](https://cloud.google.com/vertex-ai) for LLM capabilities
-
 ## Support
 
-For issues, questions, or contributions, please open an issue on GitHub.
+- **Bug Reports**: [Open an issue](https://github.com/shammianand/xerxes/issues)
+- **Feature Requests**: [Start a discussion](https://github.com/shammianand/xerxes/discussions)
+- **Documentation**: Coming soon
+
+---
+
+<div align="center">
+
+**Built with ❤️ by [Shammi Anand](https://github.com/shammianand)**
+
+</div>

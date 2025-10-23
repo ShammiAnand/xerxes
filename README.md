@@ -18,8 +18,6 @@
 
 Xerxes is a command-line AI agent that transforms natural language into DevOps operations. Unlike traditional tools with predefined commands, Xerxes uses **free-form thinking** to execute **any** command supported by your installed CLI tools (AWS, GCP, Kubernetes, Docker).
 
-<img width="936" height="376" alt="image" src="https://github.com/user-attachments/assets/8cd7f00a-356f-476f-91a1-e5a496fca6ae" />
-
 ## Features
 
 ### Core Capabilities
@@ -42,6 +40,11 @@ Xerxes is a command-line AI agent that transforms natural language into DevOps o
 uv tool install xerxes
 ```
 
+To update to the latest version:
+
+```bash
+uv tool upgrade xerxes
+```
 
 ### From Source
 
@@ -88,50 +91,7 @@ xerxes chat
 
 ### Example Session
 
-<img width="1919" height="1040" alt="image" src="https://github.com/user-attachments/assets/527db221-d33d-4992-b926-caf64feba415" />
-
-
-```
-You: how many GKE clusters do i have?
-
-[Thinking...]
-
-┌─ Command Preview ────────────────────────────────────────┐
-│ Command:                                                  │
-│ $ gcloud container clusters list --format=json           │
-│                                                           │
-│ Reasoning:                                                │
-│ Listing all GKE clusters to count them                   │
-└───────────────────────────────────────────────────────────┘
-
-[R]un / [S]kip / [A]lways for session? a
-
-✓ Auto-approve enabled for this session
-
-Executing: gcloud container clusters list --format=json
-
-╭─────────────── Output ───────────────╮
-│ [                                    │
-│   {                                  │
-│     "name": "prod-cluster",          │
-│     "location": "us-central1-a",     │
-│     ...                              │
-│   }                                  │
-│ ]                                    │
-╰──────────────────────────────────────╯
-
-Xerxes:
-You have 3 GKE clusters: prod-cluster, staging-cluster, and dev-cluster.
-
-You: show me pods in prod-cluster that are failing
-
-[Thinking...]
-
-Executing: kubectl get pods --all-namespaces --field-selector=status.phase=Failed
-
-...
-```
-
+- TODO: insert video
 
 ### Example Use Cases
 

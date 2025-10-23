@@ -2,17 +2,18 @@ import json
 import logging
 import os
 import sys
+import time
 import warnings
 from contextlib import contextmanager
 
 from rich.console import Console
 from rich.markdown import Markdown
-from rich.spinner import Spinner
 
 from ..config.settings import get_settings
 from ..executor.command import CommandExecutor
 from ..llm.vertex import VertexAIProvider
 from ..tools.registry import get_registry
+from ..ui.prompt import create_input_session, get_user_input
 from .prompts import get_system_prompt
 from .session import ChatSession
 
@@ -47,6 +48,7 @@ class Agent:
         self.registry = get_registry()
         self.executor = CommandExecutor()
         self.session = ChatSession()
+        self.last_interrupt_time = 0
 
         with suppress_stderr():
             self.llm = VertexAIProvider(
@@ -59,61 +61,54 @@ class Agent:
         self._initialize_session()
 
     def _initialize_session(self) -> None:
-        available_tools = [tool.name for tool in self.registry.get_available_tools()]
-        system_prompt = get_system_prompt(available_tools)
+        system_prompt = get_system_prompt()
         self.session.add_system_message(system_prompt)
+
+    def _handle_interrupt(self) -> bool:
+        current_time = time.time()
+        time_since_last = current_time - self.last_interrupt_time
+        self.last_interrupt_time = current_time
+
+        if time_since_last < 2.0:
+            return True
+        return False
 
     def chat(self, user_message: str) -> str:
         self.session.add_message("user", user_message)
+        tools = self.registry.get_function_schemas()
 
-        max_iterations = 10
+        max_iterations = 100
         iteration = 0
-        total_commands_executed = 0
 
-        while iteration < max_iterations:
-            iteration += 1
+        try:
+            while iteration < max_iterations:
+                iteration += 1
 
-            tools = self.registry.get_function_schemas()
+                with console.status("[cyan]Thinking... (Ctrl+C to cancel, twice to exit)", spinner="dots"):
+                    with suppress_stderr():
+                        response = self.llm.chat(
+                            messages=self.session.get_messages(),
+                            tools=tools if tools else None,
+                            max_tokens=self.settings.max_tokens,
+                            temperature=self.settings.temperature,
+                        )
 
-            with console.status("[cyan]Thinking...", spinner="dots") as status:
-                with suppress_stderr():
-                    response = self.llm.chat(
-                        messages=self.session.get_messages(),
-                        tools=tools if tools else None,
-                        max_tokens=self.settings.max_tokens,
-                        temperature=self.settings.temperature,
-                    )
+                if response.tool_calls:
+                    tool_results = []
+                    num_commands = len(response.tool_calls)
+                    any_skipped = False
 
-            if response.tool_calls:
-                tool_results = []
-                num_commands = len(response.tool_calls)
-
-                if num_commands == 1:
-                    total_commands_executed += 1
-                    console.print(
-                        f"[bold magenta]Step {iteration} - Command #{total_commands_executed}[/bold magenta]"
-                    )
-                    result = self.executor.execute_tool_call(
-                        response.tool_calls[0].name, response.tool_calls[0].arguments
-                    )
-                    tool_results.append(
-                        {
-                            "tool_call_id": response.tool_calls[0].id,
-                            "function_name": response.tool_calls[0].name,
-                            "result": result,
-                        }
-                    )
-                else:
-                    console.print(
-                        f"[bold magenta]Step {iteration} - Executing {num_commands} commands in parallel[/bold magenta]"
-                    )
                     for idx, tool_call in enumerate(response.tool_calls, 1):
-                        total_commands_executed += 1
-                        console.print(f"  [cyan]└─ Command {idx}/{num_commands} (#{total_commands_executed})[/cyan]")
+                        if num_commands > 1:
+                            console.print(f"[cyan]Command {idx}/{num_commands}[/cyan]")
 
                         result = self.executor.execute_tool_call(
                             tool_call.name, tool_call.arguments
                         )
+
+                        if result.get("skipped"):
+                            any_skipped = True
+                            break
 
                         tool_results.append(
                             {
@@ -123,20 +118,26 @@ class Agent:
                             }
                         )
 
-                tool_results_message = json.dumps(tool_results, indent=2)
-                self.session.add_message("user", f"Tool results:\n{tool_results_message}")
+                    if any_skipped:
+                        console.print("[yellow]Command skipped. Returning control to user.[/yellow]\n")
+                        return ""
 
-            elif response.content:
-                self.session.add_message("assistant", response.content)
-                return response.content
+                    tool_results_message = json.dumps(tool_results, indent=2)
+                    self.session.add_message("user", f"Tool results:\n{tool_results_message}")
 
-            else:
-                break
+                elif response.content:
+                    self.session.add_message("assistant", response.content)
+                    return response.content
 
-        return "I've completed the task or reached the maximum number of iterations."
+                else:
+                    break
+
+            return "I've completed the task or reached the maximum number of iterations."
+        except KeyboardInterrupt:
+            console.print("\n[yellow]Execution cancelled. You can now provide additional context.[/yellow]\n")
+            return ""
 
     def run_interactive(self) -> None:
-        console.print("[bold cyan]Xerxes DevOps Agent[/bold cyan]")
         console.print("Type your requests or 'exit' to quit\n")
 
         if not self.llm.is_available():
@@ -146,19 +147,11 @@ class Agent:
             )
             return
 
-        available_tools = self.registry.get_available_tools()
-        if not available_tools:
-            console.print(
-                "[yellow]Warning: No DevOps tools detected. "
-                "Install aws, gcloud, kubectl, or docker to use their functions.[/yellow]\n"
-            )
-        else:
-            tool_names = ", ".join(tool.name for tool in available_tools)
-            console.print(f"[green]Available tools: {tool_names}[/green]\n")
+        prompt_session = create_input_session()
 
         while True:
             try:
-                user_input = console.input("[bold blue]You:[/bold blue] ")
+                user_input = get_user_input(prompt_session)
 
                 if not user_input.strip():
                     continue
@@ -170,12 +163,18 @@ class Agent:
                 console.print()
 
                 response = self.chat(user_input)
-
-                console.print("[bold green]Xerxes:[/bold green]")
                 console.print(Markdown(response))
                 console.print()
 
             except KeyboardInterrupt:
+                should_exit = self._handle_interrupt()
+                if should_exit:
+                    console.print("\n\n[cyan]Goodbye![/cyan]")
+                    break
+                else:
+                    console.print("\n[yellow]Press Ctrl+C again to exit[/yellow]\n")
+                    continue
+            except EOFError:
                 console.print("\n\n[cyan]Goodbye![/cyan]")
                 break
             except Exception as e:

@@ -1,12 +1,15 @@
 from typing import Any
 
+from prompt_toolkit import Application
+from prompt_toolkit.layout import Layout
+from prompt_toolkit.layout.containers import Window
+from prompt_toolkit.layout.controls import FormattedTextControl
 from rich.console import Console
 from rich.panel import Panel
-from rich.syntax import Syntax
 
 from ..config.settings import get_settings
 from ..tools.registry import get_registry
-from .safety import is_command_destructive
+from ..ui.keybindings import create_command_preview_bindings, create_output_expansion_bindings
 
 console = Console()
 
@@ -29,12 +32,8 @@ class CommandExecutor:
             cli_command = self._get_cli_command(tool_name)
             full_command = f"{cli_command} {command}" if cli_command else command
 
-            is_destructive = self.registry.is_destructive(function_name, arguments)
-
             if not self.auto_approve_session:
-                approval = self._show_command_preview(
-                    full_command, reasoning, is_destructive
-                )
+                approval = self._show_command_preview(full_command, reasoning)
 
                 if approval == "skip":
                     return {
@@ -44,7 +43,7 @@ class CommandExecutor:
                     }
                 elif approval == "always":
                     self.auto_approve_session = True
-                    console.print("[green]✓ Auto-approve enabled for this session[/green]\n")
+                    console.print("[green]Auto-approve enabled for this session[/green]\n")
 
             console.print(f"[cyan]Executing:[/cyan] {full_command}\n")
 
@@ -91,37 +90,34 @@ class CommandExecutor:
                 border_style="green"
             ))
 
-            response = console.input(
-                "\n[[bold cyan]V[/bold cyan]]iew full output / "
-                "[[bold green]C[/bold green]]ontinue? "
-            ).strip().lower()
+            console.print("\n[dim]Press [bold cyan]Ctrl+O[/bold cyan] to expand full output, [bold green]Enter[/bold green] to continue[/dim]")
 
-            if response in ("v", "view", "yes", "y"):
+            bindings, state = create_output_expansion_bindings()
+            layout = Layout(Window(FormattedTextControl(text="")))
+            app = Application(layout=layout, key_bindings=bindings, full_screen=False)
+
+            app.run()
+
+            if state["expand"]:
                 console.print(Panel(output, title=f"{title} (full)", border_style="cyan"))
 
             console.print()
 
-    def _show_command_preview(self, command: str, reasoning: str, is_destructive: bool) -> str:
+    def _show_command_preview(self, command: str, reasoning: str) -> str:
         console.print()
-        if is_destructive:
-            console.print("[yellow]⚠️  Destructive Operation[/yellow]")
-
         console.print(Panel(
             f"[bold cyan]Command:[/bold cyan]\n$ {command}\n\n"
             f"[bold green]Reasoning:[/bold green]\n{reasoning}",
             title="Command Preview",
-            border_style="yellow" if is_destructive else "blue"
+            border_style="blue"
         ))
 
-        response = console.input(
-            "\n[[bold cyan]R[/bold cyan]]un / "
-            "[[bold yellow]S[/bold yellow]]kip / "
-            "[[bold green]A[/bold green]]lways for session? "
-        ).strip().lower()
+        console.print("\n[dim]Press [bold cyan]R[/bold cyan]=Run | [bold yellow]S[/bold yellow]=Skip | [bold green]A[/bold green]=Always[/dim]")
 
-        if response in ("a", "always"):
-            return "always"
-        elif response in ("s", "skip", "n", "no"):
-            return "skip"
-        else:
-            return "run"
+        bindings, state = create_command_preview_bindings()
+        layout = Layout(Window(FormattedTextControl(text="")))
+        app = Application(layout=layout, key_bindings=bindings, full_screen=False)
+
+        app.run()
+
+        return state["choice"] or "run"

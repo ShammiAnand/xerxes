@@ -33,15 +33,6 @@ class ToolRegistry:
 
         raise ValueError(f"Function '{function_name}' not found in any registered tool")
 
-    def is_destructive(self, function_name: str, arguments: dict[str, Any]) -> bool:
-        for tool in self.get_available_tools():
-            schemas = tool.get_function_schemas()
-            if any(schema["name"] == function_name for schema in schemas):
-                command = arguments.get("command", "")
-                return tool.is_destructive(command)
-
-        return False
-
 
 _registry = ToolRegistry()
 

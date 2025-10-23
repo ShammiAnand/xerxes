@@ -1,44 +1,40 @@
-import shlex
-import shutil
 import subprocess
-from abc import ABC, abstractmethod
 from typing import Any
 
+from .base import BaseTool
 
-class BaseTool(ABC):
+
+class ShellTool(BaseTool):
     @property
-    @abstractmethod
     def name(self) -> str:
-        pass
+        return "bash"
 
     @property
-    @abstractmethod
     def cli_command(self) -> str:
-        pass
+        return "bash"
 
     @property
-    @abstractmethod
     def description(self) -> str:
-        pass
+        return "Execute bash commands with full shell capabilities including pipes, redirection, and command chaining"
 
     def is_installed(self) -> bool:
-        return shutil.which(self.cli_command) is not None
+        return True
 
     def get_function_schemas(self) -> list[dict[str, Any]]:
         return [
             {
-                "name": f"{self.name}_execute",
-                "description": f"Execute {self.cli_command} commands. {self.description}",
+                "name": "bash_execute",
+                "description": "Execute bash commands. Supports pipes (|), redirection (>, >>), command chaining (&&, ||, ;), and all standard bash features. Any CLI tool available on the system can be used.",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "command": {
                             "type": "string",
-                            "description": f"The complete {self.cli_command} command to execute (without the '{self.cli_command}' prefix)",
+                            "description": "Complete bash command to execute. Can include pipes, redirection, chaining. Examples: 'kubectl get pods | grep Running', 'docker ps -a && docker images', 'find . -name \"*.py\" | wc -l'",
                         },
                         "reasoning": {
                             "type": "string",
-                            "description": "Brief explanation of why you're running this command and what you expect it to do",
+                            "description": "Brief explanation of why running this command",
                         },
                     },
                     "required": ["command", "reasoning"],
@@ -50,10 +46,12 @@ class BaseTool(ABC):
         try:
             result = subprocess.run(
                 command,
+                shell=True,
                 capture_output=True,
                 text=True,
                 timeout=timeout,
                 check=False,
+                executable="/bin/bash",
             )
 
             return {
@@ -78,12 +76,21 @@ class BaseTool(ABC):
             }
 
     def execute_function(self, function_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        if function_name != f"{self.name}_execute":
+        if function_name != "bash_execute":
             return {"success": False, "error": f"Unknown function: {function_name}"}
 
         command_str = arguments.get("command", "")
+        return self.execute_raw_command(command_str)
 
-        full_command = f"{self.cli_command} {command_str}"
-        command_parts = shlex.split(full_command)
-
-        return self.execute_raw_command(command_parts)
+    def get_version(self) -> str | None:
+        try:
+            result = subprocess.run(
+                ["bash", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            first_line = result.stdout.split('\n')[0] if result.stdout else ""
+            return first_line.strip()
+        except Exception:
+            return None

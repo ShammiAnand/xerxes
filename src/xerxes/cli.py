@@ -20,21 +20,15 @@ os.close(old_stderr)
 
 from .agent.core import Agent
 from .config.settings import get_settings
-from .tools.aws import AWSTool
-from .tools.docker import DockerTool
-from .tools.gcp import GCPTool
-from .tools.kubernetes import KubernetesTool
-from .tools.registry import get_registry, register_tool
+from .tools.registry import register_tool
+from .tools.shell import ShellTool
 
-app = typer.Typer(help="Xerxes - Intelligent DevOps Agent")
+app = typer.Typer(help="Xerxes: CLI Agent")
 console = Console()
 
 
 def init_tools():
-    register_tool(KubernetesTool())
-    register_tool(DockerTool())
-    register_tool(AWSTool())
-    register_tool(GCPTool())
+    register_tool(ShellTool())
 
 
 @app.command()
@@ -70,7 +64,7 @@ def config(
 
         try:
             settings.update_setting(key, value)
-            console.print(f"[green]✓ Set {key} = {value}[/green]")
+            console.print(f"[green]Set {key} = {value}[/green]")
         except ValueError as e:
             console.print(f"[red]Error: {e}[/red]")
             raise typer.Exit(1)
@@ -83,27 +77,26 @@ def config(
 
 @app.command()
 def tools():
-    """List available DevOps tools"""
-    init_tools()
-    registry = get_registry()
+    """Check availability of common CLI tools in current shell"""
+    import shutil
 
-    table = Table(title="DevOps Tools")
+    common_tools = [
+        "kubectl", "docker", "aws", "gcloud", "helm",
+        "jq", "grep", "curl", "wget", "sed", "awk",
+        "find", "netstat", "kill", "ps", "top", "git", "psql"
+    ]
+
+    table = Table(title="CLI Tools Availability")
     table.add_column("Tool", style="cyan")
-    table.add_column("CLI Command", style="magenta")
     table.add_column("Status", style="green")
-    table.add_column("Version", style="yellow")
+    table.add_column("Path", style="yellow")
 
-    for tool in registry.get_all_tools():
-        status = "Installed" if tool.is_installed() else "Not Found"
-        version = tool.get_version() or "N/A"
-        style = "green" if tool.is_installed() else "red"
-
-        table.add_row(
-            tool.name,
-            tool.cli_command,
-            f"[{style}]{status}[/{style}]",
-            version,
-        )
+    for tool_name in sorted(common_tools):
+        tool_path = shutil.which(tool_name)
+        if tool_path:
+            table.add_row(tool_name, "[green]Available[/green]", tool_path)
+        else:
+            table.add_row(tool_name, "[red]Not Found[/red]", "-")
 
     console.print(table)
 
@@ -111,7 +104,7 @@ def tools():
 @app.command()
 def version():
     """Show version information"""
-    console.print("[cyan]Xerxes DevOps Agent[/cyan]")
+    console.print("[cyan]Xerxes Agent[/cyan]")
     console.print("Version: 0.1.0")
 
 

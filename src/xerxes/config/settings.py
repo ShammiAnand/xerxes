@@ -15,11 +15,11 @@ class Settings(BaseSettings):
 
     vertex_project_id: str | None = Field(default=None)
     vertex_location: str = Field(default="us-central1")
-    vertex_model: str = Field(default="claude-3-5-sonnet@20240620")
+    vertex_model: str = Field(default="gemini-2.0-flash-exp")
     google_application_credentials: str | None = Field(default=None)
 
-    max_tokens: int = Field(default=4096)
-    temperature: float = Field(default=0.0)
+    max_tokens: int = Field(default=3000)
+    temperature: float = Field(default=0.4)
 
     auto_execute_readonly: bool = Field(default=True)
     confirm_destructive: bool = Field(default=True)

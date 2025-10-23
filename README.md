@@ -91,23 +91,9 @@ xerxes chat
 
 ### Example Session
 
-- TODO: insert video
 
-### Example Use Cases
+https://github.com/user-attachments/assets/350d91eb-b999-4c18-aba3-52d4e430bb8e
 
-**Infrastructure Discovery:**
-```
-"What cloud run services do I have and what are their URLs?"
-"Show me all pods that have restarted more than 5 times"
-"List S3 buckets and their sizes"
-```
-
-**Troubleshooting:**
-```
-"Why is my deployment failing?"
-"Show me logs from the last hour for pods with label app=frontend"
-"What containers are using more than 1GB of memory?"
-```
 
 **Operations:**
 ```

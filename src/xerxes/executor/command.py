@@ -19,12 +19,21 @@ class CommandExecutor:
         self.registry = get_registry()
         self.settings = get_settings()
         self.auto_approve_session = auto_approve_session
+        self.last_function_name: str | None = None
+        self.last_arguments: dict[str, Any] | None = None
 
     def set_auto_approve(self, value: bool):
         self.auto_approve_session = value
 
     def execute_tool_call(self, function_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         try:
+            if self._is_duplicate_command(function_name, arguments):
+                return {
+                    "success": False,
+                    "error": "This command was just executed. The task is likely already complete. Please verify the state or try a different approach.",
+                    "duplicate": True,
+                }
+
             command = arguments.get("command", "")
             reasoning = arguments.get("reasoning", "")
 
@@ -49,6 +58,9 @@ class CommandExecutor:
 
             result = self.registry.execute_function(function_name, arguments)
 
+            self.last_function_name = function_name
+            self.last_arguments = arguments
+
             if result.get("success"):
                 if result.get("stdout"):
                     self._show_output(result["stdout"], "Output")
@@ -64,6 +76,15 @@ class CommandExecutor:
             error_msg = f"Error executing {function_name}: {str(e)}"
             console.print(f"[red]{error_msg}[/red]")
             return {"success": False, "error": error_msg}
+
+    def _is_duplicate_command(self, function_name: str, arguments: dict[str, Any]) -> bool:
+        if self.last_function_name is None or self.last_arguments is None:
+            return False
+
+        return (
+            self.last_function_name == function_name
+            and self.last_arguments == arguments
+        )
 
     def _get_cli_command(self, tool_name: str) -> str | None:
         tool = self.registry.get_tool(tool_name)

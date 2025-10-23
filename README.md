@@ -16,21 +16,29 @@
 
 ## Overview
 
-Xerxes is a command-line AI agent that transforms natural language into DevOps operations. Unlike traditional tools with predefined commands, Xerxes uses **free-form thinking** to execute **any** command supported by your installed CLI tools (AWS, GCP, Kubernetes, Docker).
+Xerxes is an intelligent DevOps assistant that transforms natural language into bash commands. Unlike traditional tools with predefined commands, Xerxes leverages **full bash capabilities** with **intelligent resource discovery** to execute complex operations across your entire infrastructure.
 
 ## Features
 
 ### Core Capabilities
 
-- **Unrestricted CLI Access**: Execute ANY command from AWS CLI, gcloud, kubectl, or docker
-- **Free-Form Thinking**: LLM reasons about your request and forms optimal commands
+- **Full Bash Shell Access**: Execute ANY command with complete shell features
+  - Pipes, redirection, chaining (`|`, `>`, `>>`, `&&`, `||`)
+  - Variables, loops, conditionals, subshells
+  - Process substitution and command expansion
+- **Intelligent Resource Discovery**: Automatic fuzzy matching and pattern-based discovery
+  - Never assumes exact names - always discovers first
+  - Pattern: `SEARCH → MATCH → OPERATE`
+  - Works with files, pods, containers, instances, and more
+- **Token-Efficient Operations**: Minimal output formatting for faster responses
+  - Uses `-o name`, `--format`, `--query` flags
+  - Field projection to reduce token usage
 - **Interactive Approval**: See command + reasoning before execution
   - `[R]un` - Execute this command
   - `[S]kip` - Skip and continue
   - `[A]lways` - Auto-approve for session
-- **Bring Your Own Key (BYOK)**: Use your own Vertex AI credentials
-- **Multi-Cloud Support**: AWS, GCP, Kubernetes, Docker in one interface
-- **Safety Mechanisms**: Automatic detection of destructive operations
+- **Multi-Cloud & Multi-Tool**: kubectl, docker, aws, gcloud, helm, jq, ffmpeg, git, and more
+- **Safety First**: Automatic detection of destructive operations with confirmation prompts
 
 ## Installation
 

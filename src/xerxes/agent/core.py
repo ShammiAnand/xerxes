@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import platform
 import sys
 import time
 import warnings
@@ -49,6 +50,7 @@ class Agent:
         self.executor = CommandExecutor()
         self.session = ChatSession()
         self.last_interrupt_time = 0
+        self.os_type = platform.system()
 
         with suppress_stderr():
             self.llm = VertexAIProvider(
@@ -61,7 +63,7 @@ class Agent:
         self._initialize_session()
 
     def _initialize_session(self) -> None:
-        system_prompt = get_system_prompt()
+        system_prompt = get_system_prompt(self.os_type)
         self.session.add_system_message(system_prompt)
 
     def _handle_interrupt(self) -> bool:
@@ -138,6 +140,8 @@ class Agent:
             return ""
 
     def run_interactive(self) -> None:
+        shell_name = "PowerShell" if self.os_type == "Windows" else "Bash"
+        console.print(f"[cyan]OS:[/cyan] {self.os_type} | [cyan]Shell:[/cyan] {shell_name}")
         console.print("Type your requests or 'exit' to quit\n")
 
         if not self.llm.is_available():

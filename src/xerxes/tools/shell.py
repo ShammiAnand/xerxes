@@ -1,3 +1,4 @@
+import platform
 import subprocess
 from typing import Any
 
@@ -5,32 +6,46 @@ from .base import BaseTool
 
 
 class ShellTool(BaseTool):
+    def __init__(self):
+        self.os_type = platform.system()
+        self.is_windows = self.os_type == "Windows"
+        self.shell_name = "powershell" if self.is_windows else "bash"
+        self.shell_executable = "powershell.exe" if self.is_windows else "/bin/bash"
     @property
     def name(self) -> str:
         return "bash"
 
     @property
     def cli_command(self) -> str:
-        return "bash"
+        return self.shell_name
 
     @property
     def description(self) -> str:
+        if self.is_windows:
+            return "Execute PowerShell commands with full shell capabilities including pipelines, cmdlets, and object manipulation"
         return "Execute bash commands with full shell capabilities including pipes, redirection, and command chaining"
 
     def is_installed(self) -> bool:
         return True
 
     def get_function_schemas(self) -> list[dict[str, Any]]:
+        if self.is_windows:
+            description = "Execute PowerShell commands. Supports pipelines (|), cmdlets, object manipulation (Select-Object, Where-Object), and all standard PowerShell features. Any CLI tool or cmdlet available on the system can be used."
+            command_desc = "Complete PowerShell command to execute. Can include pipelines, cmdlets, object manipulation. Examples: 'kubectl get pods | Select-String Running', 'docker ps -a', 'Get-ChildItem -Path . -Filter \"*.py\" | Measure-Object'"
+        else:
+            description = "Execute bash commands. Supports pipes (|), redirection (>, >>), command chaining (&&, ||, ;), and all standard bash features. Any CLI tool available on the system can be used."
+            command_desc = "Complete bash command to execute. Can include pipes, redirection, chaining. Examples: 'kubectl get pods | grep Running', 'docker ps -a && docker images', 'find . -name \"*.py\" | wc -l'"
+
         return [
             {
                 "name": "bash_execute",
-                "description": "Execute bash commands. Supports pipes (|), redirection (>, >>), command chaining (&&, ||, ;), and all standard bash features. Any CLI tool available on the system can be used.",
+                "description": description,
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "command": {
                             "type": "string",
-                            "description": "Complete bash command to execute. Can include pipes, redirection, chaining. Examples: 'kubectl get pods | grep Running', 'docker ps -a && docker images', 'find . -name \"*.py\" | wc -l'",
+                            "description": command_desc,
                         },
                         "reasoning": {
                             "type": "string",
@@ -44,15 +59,24 @@ class ShellTool(BaseTool):
 
     def execute_raw_command(self, command: list[str], timeout: int = 300) -> dict[str, Any]:
         try:
-            result = subprocess.run(
-                command,
-                shell=True,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                check=False,
-                executable="/bin/bash",
-            )
+            if self.is_windows:
+                result = subprocess.run(
+                    ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command],
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                    check=False,
+                )
+            else:
+                result = subprocess.run(
+                    command,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                    check=False,
+                    executable="/bin/bash",
+                )
 
             return {
                 "success": result.returncode == 0,
@@ -84,12 +108,20 @@ class ShellTool(BaseTool):
 
     def get_version(self) -> str | None:
         try:
-            result = subprocess.run(
-                ["bash", "--version"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
+            if self.is_windows:
+                result = subprocess.run(
+                    ["powershell.exe", "-NoProfile", "-Command", "$PSVersionTable.PSVersion.ToString()"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+            else:
+                result = subprocess.run(
+                    ["bash", "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
             first_line = result.stdout.split('\n')[0] if result.stdout else ""
             return first_line.strip()
         except Exception:

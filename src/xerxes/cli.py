@@ -78,13 +78,23 @@ def config(
 @app.command()
 def tools():
     """Check availability of common CLI tools in current shell"""
+    import platform
     import shutil
 
-    common_tools = [
-        "kubectl", "docker", "aws", "gcloud", "helm",
-        "jq", "grep", "curl", "wget", "sed", "awk",
-        "find", "netstat", "kill", "ps", "top", "git", "psql"
-    ]
+    is_windows = platform.system() == "Windows"
+
+    if is_windows:
+        common_tools = [
+            "kubectl", "docker", "aws", "gcloud", "helm",
+            "jq", "curl", "wget", "git", "powershell",
+            "netstat", "tasklist", "taskkill"
+        ]
+    else:
+        common_tools = [
+            "kubectl", "docker", "aws", "gcloud", "helm",
+            "jq", "grep", "curl", "wget", "sed", "awk",
+            "find", "netstat", "kill", "ps", "top", "git", "psql"
+        ]
 
     table = Table(title="CLI Tools Availability")
     table.add_column("Tool", style="cyan")

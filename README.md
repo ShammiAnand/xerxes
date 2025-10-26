@@ -16,16 +16,18 @@
 
 ## Overview
 
-Xerxes is an intelligent DevOps assistant that transforms natural language into bash commands. Unlike traditional tools with predefined commands, Xerxes leverages **full bash capabilities** with **intelligent resource discovery** to execute complex operations across your entire infrastructure.
+Xerxes is an intelligent DevOps assistant that transforms natural language into shell commands. Unlike traditional tools with predefined commands, Xerxes leverages **full shell capabilities** with **intelligent resource discovery** to execute complex operations across your entire infrastructure.
+
+**Cross-Platform Support**: Works on Linux, macOS (Bash), and Windows (PowerShell)
 
 ## Features
 
 ### Core Capabilities
 
-- **Full Bash Shell Access**: Execute ANY command with complete shell features
-  - Pipes, redirection, chaining (`|`, `>`, `>>`, `&&`, `||`)
-  - Variables, loops, conditionals, subshells
-  - Process substitution and command expansion
+- **Cross-Platform Shell Access**: Execute ANY command with complete shell features
+  - **Linux/macOS**: Full Bash support with pipes, redirection, chaining
+  - **Windows**: Native PowerShell support with cmdlets and object pipelines
+  - Variables, loops, conditionals, and command expansion
 - **Intelligent Resource Discovery**: Automatic fuzzy matching and pattern-based discovery
   - Never assumes exact names - always discovers first
   - Pattern: `SEARCH → MATCH → OPERATE`
@@ -95,6 +97,10 @@ xerxes config set google_application_credentials /path/to/sa.json
 xerxes chat
 ```
 
+The CLI automatically detects your OS and displays shell information:
+- **Linux/macOS**: Uses Bash, shows "OS: Linux | Shell: Bash"
+- **Windows**: Uses PowerShell, shows "OS: Windows | Shell: PowerShell"
+
 ## Usage
 
 ### Example Session
@@ -103,24 +109,33 @@ xerxes chat
 https://github.com/user-attachments/assets/350d91eb-b999-4c18-aba3-52d4e430bb8e
 
 
-**Operations:**
+**Example Operations:**
+
+Linux/macOS (Bash):
 ```
 "Scale the api deployment to 5 replicas"
 "Delete all pods in failed state"
-"Create a new GCS bucket for backups"
+"Find all log files older than 7 days"
+```
+
+Windows (PowerShell):
+```
+"Show all running services"
+"Find all video files in Downloads folder"
+"Get top 5 processes by CPU usage"
 ```
 
 ## CLI Commands
 
 ```bash
-# Start interactive chat
+# Start interactive chat (detects OS automatically)
 xerxes chat
 
 # Manage configuration
 xerxes config show
 xerxes config set <key> <value>
 
-# List available tools
+# List available tools (OS-aware: shows Windows or Unix tools)
 xerxes tools
 
 # Show version
